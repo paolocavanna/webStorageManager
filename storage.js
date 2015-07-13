@@ -1,32 +1,56 @@
 /**
  * @author Paolo Cavanna [https://github.com/paolocavanna]
  * @beta
- * @version 0.1
- *
- * @namespace MYAPP
+ * @version 0.5
  * @class ManageStorage
  * @description Wrapper layer for WebStorage management.
- * @param  {Object} app App global namespace
+ * @param  {Object} w Window global object
  */
-(function(app){
+;(function(w){
 
 	"use strict";
+
+	var _slice, _warn, ManageStorage;
+
+	/**
+	 * _slice Local reference to global Array slice method
+	 * @private
+	 * @type {Function}
+	 */
+	_slice = Array.prototype.slice;
+
+	/**
+	 * _warn Dummy check for `console` support.
+	 * No need to check for all methods, just need `warn`
+	 * @param  {String} msg Message to be printed out in the console
+	 * @private
+	 */
+	_warn = function _warn(msg){
+
+		if ( !("console" in w) || typeof console === "undefined" ) {
+
+			w.console.warn(msg);
+
+		}
+
+	};
 
 	/**
 	 * create a wrapper object
 	 * @type {Object}
 	 */
-	var ManageStorage = {};
+	ManageStorage = {};
 
 	/**
 	 * @property {Object} opt Store module's options
 	 */
 	ManageStorage.opt = {
-		storage: localStorage
+		storage: w.localStorage
 	};
 
 	/**
-	 * @property {Boolean} _available Store a reference to availability's status
+	 * @property {Boolean} _available
+	 * Store a reference to availability's status
 	 */
 	ManageStorage._available = false;
 
@@ -38,7 +62,7 @@
 	 * object.
 	 * The idea behind this check is in part due to @Damiano Seno [https://github.com/madeingnecca]
 	 */
-	ManageStorage.isAvailable = function() {
+	ManageStorage.isAvailable = function isAvailable() {
 
 		var storageAvailable, storageWritable;
 
@@ -85,53 +109,43 @@
 	if ( ManageStorage._available ) {
 
 		/**
-		 * @method  execute
-		 * Abstract calls to native WebStorage methods
-		 * to avoid browsers' quirks (expecially mobile borwsers in private mode).
-		 * @param  {String} operation Storage method
+		 * @method setItem Map native setItem method
 		 * @param  {String} item      Storage item name
 		 * @param  {Object} data      Data to feed storage item
-		 * @example
-		 * app.ManageStorage.execute("setItem", "itemName", {
-		 *     foo: "bar"
-		 * });
-		 *
-		 * app.ManageStorage.execute("getItem", "itemName");
+		 * @chainable
 		 */
-		ManageStorage.execute = function(operation, item, data){
+		ManageStorage.setItem = function setItem(item, data) {
 
-			if ( typeof operation === "undefined" ) {
+			data = JSON.stringify(data);
 
-				console.warn("operation not defined in ManageStorage.execute");
+			this.opt.storage.setItem(item, data);
 
-				return;
-			}
+			return this;
 
-			switch(operation){
+		};
 
-				case "setItem":
+		/**
+		 * @method getItem Run an enhanced version of storage native getItem method:
+		 * this implementation returns an already parsed item.
+		 * @param  {String} item      Storage item name
+		 * @return {Object}	Parsed item
+		 */
+		ManageStorage.getItem = function getItem(item){
 
-					data = JSON.stringify(data);
+			return JSON.parse(this.opt.storage.getItem(item));
 
-					this.opt.storage.setItem(item, data);
+		};
 
-					break;
+		/**
+		 * @method removeItem Map native removeItem method
+		 * @param  {String} item      Storage item name
+		 * @chainable
+		 */
+		ManageStorage.removeItem = function removeItem(item){
 
-				case "getItem":
+			this.opt.storage.removeItem(item);
 
-					return JSON.parse(this.opt.storage.getItem(item));
-
-					break;
-
-				case "removeItem":
-
-					this.opt.storage.removeItem(item);
-
-					break;
-
-				default:
-
-			}
+			return this;
 
 		};
 
@@ -141,7 +155,7 @@
 		 * @param  {Number} i Loop index
 		 * @return {Function}
 		 */
-		ManageStorage.key = function(i){
+		ManageStorage.key = function key(i){
 
 			return this.opt.storage.key(i);
 
@@ -151,7 +165,7 @@
 		 * @method getLength Get storage length
 		 * @return {Number}
 		 */
-		ManageStorage.getLength = function(){
+		ManageStorage.getLength = function getLength(){
 
 			return this.opt.storage.length;
 
@@ -162,7 +176,7 @@
 		 * @param  {String} id Storage's item id
 		 * @return {Boolean}
 		 */
-		ManageStorage.check = function(id){
+		ManageStorage.check = function check(id){
 
 			if ( id in this.opt.storage ){
 
@@ -177,20 +191,15 @@
 		/**
 		 * @method  flush Clear storage utility.
 		 * If no argument is passed, the entire storage will be cleared.
+		 * @chainable
 		 */
+		ManageStorage.flush = function flush(){
 
-		// jQuery version
-		/*ManageStorage.flush = function(){
+			var args = _slice.call(arguments);
 
-			var arg = $.makeArray(arguments);
+			if ( args.length ) {
 
-			if ( arg.length ) {
-
-				$.each($.proxy(function(index, value){
-
-					this.execute.call(this, "removeItem", value);
-
-				}), this);
+				args.forEach(this.removeItem.bind(this));
 
 			} else {
 
@@ -198,32 +207,16 @@
 
 			}
 
-		};*/
-
-		// plain JavaScript version
-		ManageStorage.flush = function(){
-
-			var arg = Array.prototype.slice.call(arguments),
-				execute = this.execute;
-
-			if ( arg.length ) {
-
-				arg.forEach(execute.bind(this, "removeItem"));
-
-			} else {
-
-				this.opt.storage.clear();
-
-			}
+			return this;
 
 		};
 
 	} else {
 
-		console.warn("WARNING: if you are browsing in private mode, WebStorage is not available");
+		_warn("WARNING: if you are browsing in private mode, WebStorage is not available");
 
 	}
 
-	app.ManageStorage = ManageStorage;
+	w.ManageStorage = ManageStorage;
 
-})(MYAPP);
+})(window);
