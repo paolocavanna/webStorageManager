@@ -2,8 +2,7 @@
  * @author Paolo Cavanna [https://github.com/paolocavanna]
  * @beta
  * @version 0.5
- * @class ManageStorage
- * @description Wrapper layer for WebStorage management.
+ * @class ManageStorage Wrapper layer for WebStorage management.
  * @param  {Object} w Window global object
  */
 ;(function(w){
