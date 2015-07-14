@@ -4,9 +4,9 @@
  * @version 0.5
  * @class ManageStorage
  * @description Wrapper layer for WebStorage management.
- * @param  {Object} w Window global object
+ * @param  {Object} global Window global object
  */
-;(function(w){
+;(function(global){
 
 	"use strict";
 
@@ -27,9 +27,9 @@
 	 */
 	_warn = function _warn(msg){
 
-		if ( !("console" in w) || typeof console === "undefined" ) {
+		if ( !("console" in global) || typeof console === "undefined" ) {
 
-			w.console.warn(msg);
+			global.console.warn(msg);
 
 		}
 
@@ -45,7 +45,7 @@
 	 * @property {Object} opt Store module's options
 	 */
 	ManageStorage.opt = {
-		storage: w.localStorage
+		storage: global.localStorage
 	};
 
 	/**
@@ -217,6 +217,24 @@
 
 	}
 
-	w.ManageStorage = ManageStorage;
+	/**
+	 * Expose ManageStorage class as
+	 * - a node.js-like module
+	 * - an AMD module
+	 * - a global var
+	 */
+	if (typeof module === "object" && module && typeof module.exports === "object") {
+
+		module.exports = ManageStorage;
+
+	} else if (typeof define === "function" && define.amd) {
+
+		define([], function () { return ManageStorage; });
+
+	} else if (typeof global === "object" && typeof global.document === "object") {
+
+		global.ManageStorage = ManageStorage;
+
+	}
 
 })(window);
